@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administração de Placas</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f4f6f9;
+    }
+    .navbar {
+      background-color: #1f2a38;
+    }
+    .navbar-brand {
+      font-weight: bold;
+      color: #f1c40f !important;
+    }
+    .card-header {
+      background-color: #1f2a38;
+      color: #fff;
+    }
+    .btn-police {
+      background-color: #e74c3c;
+      color: #fff;
+      border: none;
+    }
+    .btn-police:hover {
+      background-color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">olho de aguia</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+         <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarContent">
+         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+               <a class="nav-link active" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+               <a class="nav-link" href="/admin">Admin</a>
+            </li>
+         </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Conteúdo -->
+  <div class="container mt-4">
+    <!-- Exibição de Feedback -->
+    
+        <div class="alert alert-info">
+          
+            <div></div>
+          
+        </div>
+      
+
+    <div class="row">
+      <!-- Formulário de Cadastro -->
+      <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Cadastrar / Atualizar Placa</h5>
+          </div>
+          <div class="card-body">
+            <form id="cadastroForm" action="/cadastrar" method="post">
+              <div class="mb-3">
+                <label for="placa" class="form-label">Placa</label>
+                <input type="text" class="form-control" name="placa" id="placa" placeholder="Ex: ABC1234" required>
+              </div>
+              <div class="mb-3">
+                <label for="alerta" class="form-label">Alerta</label>
+                <input type="text" class="form-control" name="alerta" id="alerta" placeholder="Ex: furto, roubo, acao_criminosa" required>
+              </div>
+              <button type="submit" class="btn btn-police w-100">Enviar</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tabela de Placas Cadastradas -->
+      <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Placas Cadastradas</h5>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-striped align-middle">
+                <thead>
+                  <tr>
+                    <th>Placa</th>
+                    <th>Alerta</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="placasBody">
+                  
+                  <tr id="row-{{ registro['placa'] }}">
+                    <td></td>
+                    <td></td>
+                    <td>
+                      <form action="/excluir/{{ registro['placa'] }}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                      </form>
+                    </td>
+                  </tr>
+                  
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+    
+    <!-- Firebase e Lógica do Frontend -->
+    <!-- Firebase App (a base) -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script>
+      // CONFIGURAÇÕES DO FIRESTORE - substitua pelos valores do seu projeto
+      const firebaseConfig = {
+  apiKey: "AIzaSyBl5vfXCGiG7NS8LZAvToX99F_wGrIp45k",
+  authDomain: "olho-que-tudo-ve.firebaseapp.com",
+  projectId: "olho-que-tudo-ve",
+  storageBucket: "olho-que-tudo-ve.firebasestorage.app",
+  messagingSenderId: "112372558125",
+  appId: "1:112372558125:web:406b7dddd9554f122f0ba4",
+  measurementId: "G-W4NFH63P54"
+      };
+
+      // Inicialize o Firebase
+      firebase.initializeApp(firebaseConfig);
+
+      // Inicializa o Firestore
+      const db = firebase.firestore();
+      // Referência à coleção "veiculos"
+      const veiculosCollection = db.collection('veiculos');
+
+      // Função para atualizar a tabela de placas em tempo real
+      function atualizaTabela() {
+        const placasBody = document.getElementById("placasBody");
+        placasBody.innerHTML = "";
+        veiculosCollection.orderBy("placa").onSnapshot((snapshot) => {
+          snapshot.docs.forEach((doc) => {
+            const data = doc.data();
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${data.placa}</td>
+              <td>${data.alerta}</td>
+              <td><button onclick="excluirPlaca('${data.placa}')" class="btn btn-sm btn-outline-danger">Excluir</button></td>
+            `;
+            placasBody.appendChild(row);
+          });
+        });
+      }
+
+      atualizaTabela();
+
+      document.getElementById("cadastroForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const placaInput = document.getElementById("placa");
+        const alertaInput = document.getElementById("alerta");
+        let placa = placaInput.value.trim().toUpperCase();
+        let alerta = alertaInput.value.trim().toLowerCase();
+        if(!placa || !alerta) return alert("Preencha todos os campos!");
+
+        veiculosCollection.doc(placa).set({
+          placa: placa,
+          alerta: alerta
+        }).then(() => {
+          alert("Placa cadastrada/atualizada com sucesso!");
+          placaInput.value = "";
+          alertaInput.value = "";
+        }).catch((error) => {
+          console.error("Erro ao cadastrar placa: ", error);
+        });
+      });
+
+      function excluirPlaca(placa) {
+        if(confirm("Confirma a exclusão da placa " + placa + "?")) {
+          veiculosCollection.doc(placa).delete().then(() => {
+            alert("Placa excluída com sucesso!");
+          }).catch((error) => {
+            console.error("Erro ao excluir placa: ", error);
+          });
+        }
+      }
+    </script>
+   
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
