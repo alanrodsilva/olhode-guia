@@ -6,8 +6,6 @@ import time
 import os
 import winsound  # Módulo para emitir som (Windows)
 
-# Configure o caminho, se necessário:
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # Caminhos
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
